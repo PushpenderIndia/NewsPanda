@@ -1,45 +1,51 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import "./global.css";
+import { useEffect, useState } from 'react';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import BootSplash from "react-native-bootsplash";
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import TopicsScreen from './src/screens/TopicsScreen';
+import { configureGoogleSignIn } from './src/services/auth';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+type Screen = 'welcome' | 'topics' | 'home';
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
+  const [userInfo, setUserInfo] = useState<any>(null);
+
+  useEffect(() => {
+    const init = async () => {
+      configureGoogleSignIn();
+      await BootSplash.hide({ fade: true });
+    };
+
+    init();
+  }, []);
+
+  const handleSignInComplete = (user: any) => {
+    setUserInfo(user);
+    setCurrentScreen('topics');
+  };
+
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'welcome':
+        return <WelcomeScreen onContinue={handleSignInComplete} />;
+      case 'topics':
+        return <TopicsScreen onContinue={() => setCurrentScreen('home')} />;
+      case 'home':
+        return null;
+      default:
+        return <WelcomeScreen onContinue={handleSignInComplete} />;
+    }
+  };
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <StatusBar barStyle="dark-content" />
+      {renderScreen()}
     </SafeAreaProvider>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
