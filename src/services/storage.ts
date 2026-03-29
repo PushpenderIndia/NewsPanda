@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   USER_INFO: '@newspanda:user_info',
   SELECTED_TOPICS: '@newspanda:selected_topics',
   ONBOARDING_COMPLETED: '@newspanda:onboarding_completed',
+  STREAK: '@newspanda:streak',
 };
 
 // User Info Storage
@@ -80,6 +81,25 @@ export const isOnboardingCompleted = async (): Promise<boolean> => {
   }
 };
 
+// Streak Storage
+export const saveStreak = async (streak: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.STREAK, streak.toString());
+  } catch (error) {
+    console.error('Error saving streak:', error);
+  }
+};
+
+export const getStreak = async (): Promise<number> => {
+  try {
+    const streak = await AsyncStorage.getItem(STORAGE_KEYS.STREAK);
+    return streak ? parseInt(streak, 10) : 0;
+  } catch (error) {
+    console.error('Error getting streak:', error);
+    return 0;
+  }
+};
+
 // Clear all app data
 export const clearAllData = async (): Promise<void> => {
   try {
@@ -87,6 +107,7 @@ export const clearAllData = async (): Promise<void> => {
       STORAGE_KEYS.USER_INFO,
       STORAGE_KEYS.SELECTED_TOPICS,
       STORAGE_KEYS.ONBOARDING_COMPLETED,
+      STORAGE_KEYS.STREAK,
     ]);
   } catch (error) {
     console.error('Error clearing all data:', error);

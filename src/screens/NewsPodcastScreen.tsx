@@ -75,7 +75,11 @@ const NewsPodcastScreen: React.FC<NewsPodcastScreenProps> = ({ topics = [] }) =>
 
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {podcasts.map((podcast) => {
           const topicColor = TOPIC_COLORS[podcast.category] || '#58CC02';
           const topicAnimation = TOPIC_ANIMATIONS[podcast.category] || TOPIC_ANIMATIONS.Tech;
@@ -158,6 +162,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   podcastCard: {
     backgroundColor: '#FFFFFF',

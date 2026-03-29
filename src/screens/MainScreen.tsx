@@ -17,6 +17,7 @@ interface MainScreenProps {
 const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Load saved topics on mount
   useEffect(() => {
@@ -28,6 +29,23 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
     };
     loadTopics();
   }, []);
+
+  // Reload topics when switching tabs (to catch settings changes)
+  useEffect(() => {
+    if (activeTab === 'home' || activeTab === 'podcast') {
+      const loadTopics = async () => {
+        const savedTopicIds = await getSelectedTopics();
+        const topicNames = convertIdsToNames(savedTopicIds);
+        setSelectedTopics(topicNames);
+
+        // Trigger refresh in HomeScreen by updating the key
+        if (activeTab === 'home') {
+          setRefreshKey(prev => prev + 1);
+        }
+      };
+      loadTopics();
+    }
+  }, [activeTab]);
 
   const handleTopicsUpdate = async (topics?: string[]) => {
     if (topics) {
@@ -41,7 +59,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
   const renderScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen userInfo={userInfo} topics={selectedTopics} />;
+        return <HomeScreen key={refreshKey} userInfo={userInfo} topics={selectedTopics} />;
       case 'podcast':
         return <NewsPodcastScreen topics={selectedTopics} />;
       case 'settings':
@@ -53,7 +71,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
           />
         );
       default:
-        return <HomeScreen userInfo={userInfo} topics={selectedTopics} />;
+        return <HomeScreen key={refreshKey} userInfo={userInfo} topics={selectedTopics} />;
     }
   };
 

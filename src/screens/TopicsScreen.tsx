@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import LottieView from 'lottie-react-native';
 import DuoButton from '../components/DuoButton';
-import { saveSelectedTopics, saveUserInfo, setOnboardingCompleted, getSelectedTopics } from '../services/storage';
+import { saveSelectedTopics, saveUserInfo, setOnboardingCompleted, getSelectedTopics, saveStreak } from '../services/storage';
+import { syncUserData } from '../services/api';
+import { convertIdsToNames } from '../utils/topicMapping';
 
 interface TopicsScreenProps {
   onContinue: (topics?: string[]) => void;
@@ -36,20 +38,81 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
     loadSavedTopics();
   }, []);
 
-  const toggleTopic = (topicId: string) => {
-    setSelectedTopics((prev) =>
-      prev.includes(topicId)
-        ? prev.filter((id) => id !== topicId)
-        : [...prev, topicId]
-    );
+  const toggleTopic = async (topicId: string) => {
+    const newSelectedTopics = selectedTopics.includes(topicId)
+      ? selectedTopics.filter((id) => id !== topicId)
+      : [...selectedTopics, topicId];
+
+    setSelectedTopics(newSelectedTopics);
+
+    // Auto-save in settings mode
+    if (isSettingsMode) {
+      await saveSelectedTopics(newSelectedTopics);
+
+      // Sync with backend if user info is available
+      if (userInfo?.user?.email) {
+        try {
+          const topicNames = convertIdsToNames(newSelectedTopics);
+          const response = await syncUserData({
+            email: userInfo.user.email,
+            name: userInfo.user.name || userInfo.user.givenName || '',
+            topics: topicNames,
+          });
+
+          if (response.streak) {
+            await saveStreak(response.streak);
+          }
+
+          console.log('Topics auto-saved in settings mode');
+        } catch (error) {
+          console.error('Failed to sync topics in settings mode:', error);
+        }
+      }
+    }
   };
 
-  const selectAll = () => {
-    setSelectedTopics(TOPICS.map(topic => topic.id));
+  const selectAll = async () => {
+    const allTopicIds = TOPICS.map(topic => topic.id);
+    setSelectedTopics(allTopicIds);
+
+    // Auto-save in settings mode
+    if (isSettingsMode) {
+      await saveSelectedTopics(allTopicIds);
+
+      if (userInfo?.user?.email) {
+        try {
+          const topicNames = convertIdsToNames(allTopicIds);
+          await syncUserData({
+            email: userInfo.user.email,
+            name: userInfo.user.name || userInfo.user.givenName || '',
+            topics: topicNames,
+          });
+        } catch (error) {
+          console.error('Failed to sync all topics:', error);
+        }
+      }
+    }
   };
 
-  const deselectAll = () => {
+  const deselectAll = async () => {
     setSelectedTopics([]);
+
+    // Auto-save in settings mode
+    if (isSettingsMode) {
+      await saveSelectedTopics([]);
+
+      if (userInfo?.user?.email) {
+        try {
+          await syncUserData({
+            email: userInfo.user.email,
+            name: userInfo.user.name || userInfo.user.givenName || '',
+            topics: [],
+          });
+        } catch (error) {
+          console.error('Failed to sync deselect all:', error);
+        }
+      }
+    }
   };
 
   const handleContinue = async () => {
@@ -60,6 +123,28 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
     if (!isSettingsMode && userInfo) {
       await saveUserInfo(userInfo);
       await setOnboardingCompleted();
+    }
+
+    // Sync with backend
+    if (userInfo?.user?.email) {
+      try {
+        const topicNames = convertIdsToNames(selectedTopics);
+        const response = await syncUserData({
+          email: userInfo.user.email,
+          name: userInfo.user.name || userInfo.user.givenName || '',
+          topics: topicNames,
+        });
+
+        // Save streak to local storage
+        if (response.streak) {
+          await saveStreak(response.streak);
+        }
+
+        console.log('User data synced successfully:', response);
+      } catch (error) {
+        console.error('Failed to sync user data:', error);
+        // Continue anyway - offline support
+      }
     }
 
     // Call the onContinue callback

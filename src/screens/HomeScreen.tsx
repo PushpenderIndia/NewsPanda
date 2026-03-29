@@ -12,6 +12,8 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RenderHTML from 'react-native-render-html';
+import { getStreak, saveStreak, getUserInfo } from '../services/storage';
+import { updateStreak as updateStreakAPI } from '../services/api';
 
 const mascotHappy = require('../assets/mascot-happy.png');
 
@@ -20,6 +22,7 @@ const SWIPE_THRESHOLD = 120;
 
 interface HomeScreenProps {
   topics: string[];
+  userInfo?: any;
 }
 
 interface NewsArticle {
@@ -93,6 +96,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cards, setCards] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [streak, setStreak] = useState(0);
 
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -146,8 +150,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   };
 
   useEffect(() => {
+    // Reset index and fetch news when topics change
+    setCurrentIndex(0);
     fetchNews();
   }, [topics]);
+
+  // 🔥 Load and update streak
+  useEffect(() => {
+    const loadAndUpdateStreak = async () => {
+      try {
+        // Load local streak first
+        const localStreak = await getStreak();
+        setStreak(localStreak);
+
+        // Try to update from backend
+        const userInfo = await getUserInfo();
+        if (userInfo?.user?.email) {
+          const response = await updateStreakAPI(userInfo.user.email);
+          if (response.streak !== undefined) {
+            setStreak(response.streak);
+            await saveStreak(response.streak);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating streak:', error);
+        // Keep local streak if backend fails
+      }
+    };
+
+    loadAndUpdateStreak();
+  }, []);
 
   // 🚀 Preload next 5
   useEffect(() => {
@@ -185,6 +217,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const renderCards = () => {
     if (loading) {
       return <SkeletonLoader />;
+    }
+
+    if (cards.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No news available</Text>
+        </View>
+      );
     }
 
     if (currentIndex >= cards.length) {
@@ -286,7 +326,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakNumber}>0</Text>
+            <Text style={styles.streakNumber}>{streak}</Text>
           </View>
         </View>
       </View>
