@@ -3,6 +3,8 @@ import { View, Text, Image, Animated, PanResponder, Dimensions, StyleSheet } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DuoButton from '../components/DuoButton';
 
+const mascotHappy = require('../assets/mascot-happy.png');
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 120;
 
@@ -232,10 +234,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>NewsPanda</Text>
-        <Text style={styles.headerSubtitle}>
-          {cards.length - currentIndex} articles remaining
-        </Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoContainer}>
+            <Image source={mascotHappy} style={styles.logoImage} />
+          </View>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>NewsPanda</Text>
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${((mockNewsData.length - (cards.length - currentIndex)) / mockNewsData.length) * 100}%` }
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {mockNewsData.length - (cards.length - currentIndex)}/{mockNewsData.length}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={styles.streakContainer}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={styles.streakNumber}>0</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.cardsContainer}>{renderCards()}</View>
@@ -273,21 +298,90 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: '#E5E5E5',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  logoContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFF4E6',
+    borderWidth: 3,
+    borderColor: '#FF9500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 44,
+    height: 44,
+    resizeMode: 'contain',
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#3C3C3C',
+    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 14,
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressBar: {
+    flex: 1,
+    height: 12,
+    backgroundColor: '#E5E5E5',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginRight: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#58CC02',
+    borderRadius: 6,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: 'bold',
     color: '#777777',
-    marginTop: 4,
+    minWidth: 40,
+  },
+  headerRight: {
+    marginLeft: 12,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF4E6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#FF9500',
+  },
+  streakEmoji: {
+    fontSize: 18,
+    marginRight: 4,
+  },
+  streakNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF9500',
   },
   cardsContainer: {
     flex: 1,
