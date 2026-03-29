@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BootSplash from "react-native-bootsplash";
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import TopicsScreen from './src/screens/TopicsScreen';
+import HomeScreen from './src/screens/HomeScreen';
 import { configureGoogleSignIn } from './src/services/auth';
 
 type Screen = 'welcome' | 'topics' | 'home';
@@ -34,7 +35,7 @@ function App() {
       case 'topics':
         return <TopicsScreen onContinue={() => setCurrentScreen('home')} />;
       case 'home':
-        return null;
+        return <HomeScreen userInfo={userInfo} />;
       default:
         return <WelcomeScreen onContinue={handleSignInComplete} />;
     }
