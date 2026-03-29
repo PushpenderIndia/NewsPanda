@@ -8,16 +8,17 @@ import {
   PanResponder,
   Dimensions,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import RenderHTML from 'react-native-render-html';
 
 const mascotHappy = require('../assets/mascot-happy.png');
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 120;
 
 interface HomeScreenProps {
-  userInfo?: any;
   topics: string[];
 }
 
@@ -52,14 +53,17 @@ const buildRSSUrls = (topics: string[]) => {
   });
 };
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo, topics }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cards, setCards] = useState<NewsArticle[]>([]);
-  const position = useRef(new Animated.Value(0)).current;
+  const [loading, setLoading] = useState(true);
 
-  // 🔥 Fetch News
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  // 🔥 Fetch news
   const fetchNews = async () => {
     try {
+      setLoading(true);
       const urls = buildRSSUrls(topics.length ? topics : ["Tech"]);
       const parser = new XMLParser();
 
@@ -78,8 +82,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo, topics }) => {
           return {
             id: `${Math.random()}`,
             title: title || "No title",
-            description: item.description || "No description",
-            image: `https://picsum.photos/500/900?random=${index}`,
+            description: item.description || "",
+            image: `https://picsum.photos/600/900?random=${index}`,
             source: source || "News",
             category: "General",
           };
@@ -94,6 +98,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo, topics }) => {
       setCurrentIndex(0);
     } catch (err) {
       console.log("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,146 +107,132 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo, topics }) => {
     fetchNews();
   }, [topics]);
 
-  // 🔥 Vertical swipe
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) =>
-      Math.abs(gesture.dy) > 10,
+  // 🚀 Preload next 5
+  useEffect(() => {
+    const next = cards.slice(currentIndex, currentIndex + 5);
+    next.forEach((item) => Image.prefetch(item.image));
+  }, [currentIndex, cards]);
 
-    onPanResponderMove: (_, gesture) => {
-      position.setValue(gesture.dy);
+  // 🎯 Vertical swipe
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10,
+
+    onPanResponderMove: (_, g) => {
+      translateY.setValue(g.dy);
     },
 
-    onPanResponderRelease: (_, gesture) => {
-      if (gesture.dy < -SWIPE_THRESHOLD) {
-        swipeUp();
-      } else if (gesture.dy > SWIPE_THRESHOLD) {
-        swipeDown();
+    onPanResponderRelease: (_, g) => {
+      if (g.dy < -SWIPE_THRESHOLD) {
+        Animated.timing(translateY, {
+          toValue: -SCREEN_HEIGHT,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          translateY.setValue(0);
+          setCurrentIndex((p) => p + 1);
+        });
       } else {
-        resetPosition();
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
       }
     },
   });
 
-  const swipeUp = () => {
-    Animated.timing(position, {
-      toValue: -SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentIndex((prev) => prev + 1);
-      position.setValue(0);
-    });
-  };
-
-  const swipeDown = () => {
-    if (currentIndex === 0) return resetPosition();
-
-    Animated.timing(position, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentIndex((prev) => prev - 1);
-      position.setValue(0);
-    });
-  };
-
-  const resetPosition = () => {
-    Animated.spring(position, {
-      toValue: 0,
-      useNativeDriver: true,
-    }).start();
-  };
-
   const renderCards = () => {
-    if (cards.length === 0) {
+    if (loading) {
       return (
-        <View style={styles.noMoreCards}>
-          <Text>Loading news...</Text>
+        <View style={styles.skeleton}>
+          <ActivityIndicator size="large" color="#58CC02" />
+          <Text style={{ color: '#fff', marginTop: 10 }}>Loading news...</Text>
         </View>
       );
     }
 
     if (currentIndex >= cards.length) {
       return (
-        <View style={styles.noMoreCards}>
-          <Text style={styles.noMoreCardsText}>🎉 You've seen all the news!</Text>
-          <Text style={styles.noMoreCardsSubtext}>
-            Check back later for more updates
-          </Text>
+        <View style={styles.skeleton}>
+          <Text style={{ color: '#fff' }}>🎉 No more news</Text>
         </View>
       );
     }
 
-    return cards.map((card, index) => {
-      if (index < currentIndex - 1 || index > currentIndex + 1) return null;
+    return cards
+      .map((card, index) => {
+        if (index < currentIndex) return null;
+        if (index > currentIndex + 1) return null;
 
-      const isCurrent = index === currentIndex;
+        const isTop = index === currentIndex;
 
-      const translateY = isCurrent
-        ? position
-        : new Animated.Value((index - currentIndex) * SCREEN_HEIGHT);
+        return (
+          <Animated.View
+            key={card.id}
+            style={[
+              styles.card,
+              isTop && { transform: [{ translateY }] },
+            ]}
+            {...(isTop ? panResponder.panHandlers : {})}
+          >
+            <Image source={{ uri: card.image }} style={styles.image} />
 
-      return (
-        <Animated.View
-          key={card.id}
-          style={[
-            styles.feedCard,
-            { transform: [{ translateY }] },
-          ]}
-          {...(isCurrent ? panResponder.panHandlers : {})}
-        >
-          <Image source={{ uri: card.image }} style={styles.cardImage} />
+            <View style={styles.overlay} />
 
-          <View style={styles.cardContent}>
-            <View style={styles.cardTopSection}>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{card.category}</Text>
-              </View>
+            <View style={styles.content}>
+              <Text style={styles.category}>{card.category}</Text>
 
-              <Text style={styles.cardTitle}>{card.title}</Text>
+              <Text style={styles.title}>{card.title}</Text>
 
-              <Text style={styles.cardDescription}>
-                {card.description}
-              </Text>
+              {/* ✅ HTML RENDER */}
+              <RenderHTML
+                contentWidth={SCREEN_WIDTH - 40}
+                source={{ html: card.description }}
+                tagsStyles={{
+                  a: { color: '#58CC02' },
+                  font: { color: '#ddd' },
+                  p: { color: '#ddd', fontSize: 14 },
+                }}
+              />
+
+              <Text style={styles.source}>{card.source}</Text>
             </View>
-
-            <View style={styles.cardBottomSection}>
-              <Text style={styles.cardSource}>{card.source}</Text>
-            </View>
-          </View>
-        </Animated.View>
-      );
-    });
+          </Animated.View>
+        );
+      })
+      .reverse();
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ HEADER — EXACTLY SAME */}
+      {/* 🔥 HEADER (ALWAYS ON TOP) */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image source={mascotHappy} style={styles.logoImage} />
           </View>
+
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>NewsPanda</Text>
+
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
                 <View
                   style={[
                     styles.progressFill,
                     {
-                      width: `${((currentIndex) / (cards.length || 1)) * 100}%`,
+                      width: `${(currentIndex / (cards.length || 1)) * 100}%`,
                     },
                   ]}
                 />
               </View>
+
               <Text style={styles.progressText}>
                 {currentIndex}/{cards.length}
               </Text>
             </View>
           </View>
         </View>
+
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <Text style={styles.streakEmoji}>🔥</Text>
@@ -249,17 +241,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo, topics }) => {
         </View>
       </View>
 
-      {/* 🔥 FEED */}
-      <View style={styles.feedContainer}>{renderCards()}</View>
+      {/* 🔥 FEED BEHIND */}
+      <View style={styles.feed}>{renderCards()}</View>
     </SafeAreaView>
   );
 };
 
-/* 🔥 IMPORTANT: HEADER STYLES UNTOUCHED */
+export default HomeScreen;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7F7F7' },
+  container: { flex: 1, backgroundColor: '#000' },
+
+  feed: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
 
   header: {
+    zIndex: 1000,
+    elevation: 1000,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
@@ -269,11 +269,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
+
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+
   logoContainer: {
     width: 50,
     height: 50,
@@ -286,19 +284,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
     overflow: 'hidden',
   },
-  logoImage: {
-    width: 44,
-    height: 44,
-    resizeMode: 'contain',
-  },
+
+  logoImage: { width: 44, height: 44 },
+
   headerTextContainer: { flex: 1 },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#3C3C3C',
-    marginBottom: 4,
-  },
+
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#3C3C3C' },
+
   progressContainer: { flexDirection: 'row', alignItems: 'center' },
+
   progressBar: {
     flex: 1,
     height: 12,
@@ -307,18 +301,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginRight: 8,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#58CC02',
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#777777',
-    minWidth: 40,
-  },
+
+  progressFill: { height: '100%', backgroundColor: '#58CC02' },
+
+  progressText: { fontSize: 12, fontWeight: 'bold', color: '#777' },
+
   headerRight: { marginLeft: 12 },
+
   streakContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -329,72 +318,55 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FF9500',
   },
+
   streakEmoji: { fontSize: 18, marginRight: 4 },
-  streakNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FF9500',
+
+  streakNumber: { fontSize: 16, fontWeight: 'bold', color: '#FF9500' },
+
+  card: {
+    position: 'absolute',
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
 
-  // 🔥 Feed styles
-  feedContainer: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  feedCard: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  cardImage: {
+  image: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
-  cardContent: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    padding: 20,
+
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  cardTopSection: { marginBottom: 10 },
-  cardBottomSection: {},
-  categoryBadge: {
-    backgroundColor: '#58CC02',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    alignSelf: 'flex-start',
-  },
-  categoryText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 12,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#ddd',
-    marginTop: 6,
-  },
-  cardSource: {
-    fontSize: 13,
-    color: '#aaa',
+
+  content: {
+    position: 'absolute',
+    bottom: 100,
+    padding: 20,
   },
 
-  noMoreCards: {
+  category: {
+    color: '#58CC02',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+
+  title: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
+  source: {
+    color: '#aaa',
+    marginTop: 10,
+  },
+
+  skeleton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  noMoreCardsText: { fontSize: 24, fontWeight: 'bold' },
-  noMoreCardsSubtext: { fontSize: 16, color: '#777' },
 });
-
-export default HomeScreen;
