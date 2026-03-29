@@ -45,7 +45,7 @@ const TOPIC_RSS_MAP: Record<string, string> = {
   Sports: "sports cricket football",
   AI: "artificial intelligence AI",
   Crypto: "crypto bitcoin blockchain",
-  "World News": "world news",
+  "World News": "world international global",
   Entertainment: "entertainment movies bollywood",
 };
 
