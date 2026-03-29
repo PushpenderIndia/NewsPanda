@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RenderHTML from 'react-native-render-html';
 
@@ -176,14 +177,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
           >
             <Image source={{ uri: card.image }} style={styles.image} />
 
-            <View style={styles.overlay} />
+            <LinearGradient
+              colors={[
+                'transparent',
+                'rgba(0,0,0,0.05)',
+                'rgba(0,0,0,0.15)',
+                'rgba(0,0,0,0.35)',
+                'rgba(0,0,0,0.6)',
+                'rgba(0,0,0,0.8)',
+                'rgba(0,0,0,0.95)',
+              ]}
+              locations={[0, 0.1, 0.25, 0.45, 0.65, 0.85, 1]}
+              style={styles.gradientOverlay}
+            />
 
             <View style={styles.content}>
               <Text style={styles.category}>{card.category}</Text>
 
               <Text style={styles.title}>{card.title}</Text>
 
-              {/* ✅ HTML RENDER */}
               <RenderHTML
                 contentWidth={SCREEN_WIDTH - 40}
                 source={{ html: card.description }}
@@ -302,6 +314,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: '65%', 
+  },
+
   progressFill: { height: '100%', backgroundColor: '#58CC02' },
 
   progressText: { fontSize: 12, fontWeight: 'bold', color: '#777' },
@@ -357,6 +376,17 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+
+  description: {
+    color: '#ddd',
+    fontSize: 14,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
   source: {
