@@ -48,3 +48,22 @@ NewsPanda is a gamified news reading mobile application built with React Native 
 - **State Management**: React Hooks
 - **Storage**: AsyncStorage for local persistence
 
+## Build APP
+
+```
+npx expo prebuild --platform android --clean
+cd android
+./gradlew clean
+./gradlew assembleRelease
+cp app/build/outputs/apk/release/app-release.apk ../NewsPanda-release.apk
+```
+
+### For Google Play Release
+
+```
+npx expo prebuild --platform android --clean
+cd android
+./gradlew clean
+./gradlew bundleRelease
+cp app/build/outputs/bundle/release/app-release.aab ../NewsPanda-release.aab
+```
