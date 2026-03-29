@@ -8,6 +8,8 @@ import {
   PanResponder,
   Dimensions,
   StyleSheet,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -99,6 +101,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [xp, setXp] = useState(0);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -341,17 +344,75 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
           </View>
         </View>
 
-        <View style={styles.headerRight}>
-          <View style={styles.streakContainer}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakNumber}>{streak}</Text>
+        <TouchableOpacity
+          style={styles.statsButton}
+          onPress={() => setShowStatsModal(true)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Icon name="fire" size={20} color="#FF6B35" />
+              <Text style={styles.statValue}>{streak}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Icon name="star" size={20} color="#FFC107" />
+              <Text style={styles.statValue}>{xp}</Text>
+            </View>
           </View>
-          <View style={styles.xpContainer}>
-            <Text style={styles.xpEmoji}>⭐</Text>
-            <Text style={styles.xpNumber}>{xp}</Text>
-          </View>
-        </View>
+        </TouchableOpacity>
       </View>
+
+      {/* Stats Modal */}
+      <Modal
+        visible={showStatsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowStatsModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowStatsModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Your Stats</Text>
+              <TouchableOpacity onPress={() => setShowStatsModal(false)}>
+                <Icon name="close" size={24} color="#3C3C3C" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.statsDetailContainer}>
+              <View style={styles.statsDetailCard}>
+                <View style={styles.statsDetailIconContainer}>
+                  <Icon name="fire" size={32} color="#FF6B35" />
+                </View>
+                <View style={styles.statsDetailInfo}>
+                  <Text style={styles.statsDetailLabel}>Daily Streak</Text>
+                  <Text style={styles.statsDetailValue}>{streak} days</Text>
+                  <Text style={styles.statsDetailDescription}>
+                    Keep reading daily to maintain your streak!
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.statsDetailCard}>
+                <View style={styles.statsDetailIconContainer}>
+                  <Icon name="star" size={32} color="#FFC107" />
+                </View>
+                <View style={styles.statsDetailInfo}>
+                  <Text style={styles.statsDetailLabel}>Experience Points</Text>
+                  <Text style={styles.statsDetailValue}>{xp} XP</Text>
+                  <Text style={styles.statsDetailDescription}>
+                    Earn 1 XP for every news article you swipe!
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* 🔥 FEED */}
       <View style={styles.feed}>{renderCards()}</View>
@@ -418,41 +479,130 @@ const styles = StyleSheet.create({
 
   progressText: { fontSize: 12, fontWeight: 'bold', color: '#777' },
 
-  headerRight: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
+  statsButton: {
+    marginLeft: 12,
   },
 
-  streakContainer: {
+  statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#FF9500',
-    marginRight: 8, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
 
-  streakEmoji: { fontSize: 16, marginRight: 4 },
-
-  streakNumber: { fontSize: 16, fontWeight: 'bold', color: '#FF9500' },
-
-  xpContainer: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#58CC02',
+    gap: 6,
   },
 
-  xpEmoji: { fontSize: 16, marginRight: 4 }, 
+  statValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3C3C3C',
+  },
 
-  xpNumber: { fontSize: 16, fontWeight: 'bold', color: '#58CC02' },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E5E5',
+    marginHorizontal: 12,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3C3C3C',
+  },
+
+  statsDetailContainer: {
+    gap: 16,
+  },
+
+  statsDetailCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F7F7F7',
+    borderRadius: 16,
+    padding: 16,
+  },
+
+  statsDetailIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  statsDetailInfo: {
+    flex: 1,
+  },
+
+  statsDetailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#777777',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+
+  statsDetailValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#3C3C3C',
+    marginBottom: 8,
+  },
+
+  statsDetailDescription: {
+    fontSize: 14,
+    color: '#777777',
+    lineHeight: 20,
+  },
 
   card: {
     position: 'absolute',
