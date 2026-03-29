@@ -43,7 +43,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
       case 'home':
         return <HomeScreen userInfo={userInfo} topics={selectedTopics} />;
       case 'podcast':
-        return <NewsPodcastScreen />;
+        return <NewsPodcastScreen topics={selectedTopics} />;
       case 'settings':
         return (
           <TopicsScreen
