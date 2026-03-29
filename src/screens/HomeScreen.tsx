@@ -5,12 +5,12 @@ import {
   Text,
   Image,
   Animated,
-  PanResponder,
   Dimensions,
   StyleSheet,
   TouchableOpacity,
   Modal,
 } from 'react-native';
+import PagerView from 'react-native-pager-view';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RenderHTML from 'react-native-render-html';
@@ -21,7 +21,6 @@ import { updateStreak as updateStreakAPI, addXP } from '../services/api';
 const mascotHappy = require('../assets/mascot-happy.png');
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = 120;
 
 interface HomeScreenProps {
   topics: string[];
@@ -80,7 +79,7 @@ const SkeletonLoader = () => {
   }, [fadeAnim]);
 
   return (
-    <View style={styles.card}>
+    <View style={styles.skeletonCard}>
       <Animated.View style={[styles.skeletonBackground, { opacity: fadeAnim }]} />
       <View style={styles.content}>
         <Animated.View style={[styles.skeletonLine, { width: 80, height: 16, backgroundColor: '#58CC02', marginBottom: 12, opacity: fadeAnim }]} />
@@ -102,8 +101,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const [streak, setStreak] = useState(0);
   const [xp, setXp] = useState(0);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [swipeCount, setSwipeCount] = useState(0);
 
-  const translateY = useRef(new Animated.Value(0)).current;
+  const pagerRef = useRef<PagerView>(null);
 
   // 🔥 Fetch news
   const fetchNews = async () => {
@@ -194,123 +194,72 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
     next.forEach((item) => Image.prefetch(item.image));
   }, [currentIndex, cards]);
 
-  // 🎯 Vertical swipe
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10,
+  // 🎯 Handle page change (swipe)
+  const handlePageSelected = async (e: any) => {
+    const newIndex = e.nativeEvent.position;
+    setCurrentIndex(newIndex);
 
-    onPanResponderMove: (_, g) => {
-      translateY.setValue(g.dy);
-    },
+    // Increment swipe count
+    const newSwipeCount = swipeCount + 1;
+    setSwipeCount(newSwipeCount);
 
-    onPanResponderRelease: async (_, g) => {
-      if (g.dy < -SWIPE_THRESHOLD) {
-        // Award XP for swipe
-        try {
-          const userInfo = await getUserInfo();
-          if (userInfo?.email) {
-            const response = await addXP(userInfo.email, 1);
-            if (response.success && response.xp !== undefined) {
-              setXp(response.xp);
-              await saveXP(response.xp);
-            }
+    // Award 1 XP for every 10 swipes
+    if (newSwipeCount % 10 === 0) {
+      try {
+        const userInfo = await getUserInfo();
+        if (userInfo?.email) {
+          const response = await addXP(userInfo.email, 1);
+          if (response.success && response.xp !== undefined) {
+            setXp(response.xp);
+            await saveXP(response.xp);
           }
-        } catch (error) {
-          console.error('Error adding XP:', error);
         }
-
-        Animated.timing(translateY, {
-          toValue: -SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          translateY.setValue(0);
-          setCurrentIndex((p) => p + 1);
-        });
-      } else {
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
+      } catch (error) {
+        console.error('Error adding XP:', error);
       }
-    },
-  });
-
-  const renderCards = () => {
-    if (loading) {
-      return <SkeletonLoader />;
     }
+  };
 
-    if (cards.length === 0) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No news available</Text>
+  const renderCard = (card: NewsArticle) => {
+    return (
+      <View key={card.id} style={styles.card}>
+        <Image source={{ uri: card.image }} style={styles.image} />
+
+        {/* 🔥 FIXED OVERLAY & GRADIENT */}
+        <View style={styles.overlay} />
+        <LinearGradient
+          colors={[
+            'rgba(0,0,0,0)',
+            'rgba(0,0,0,0.05)',
+            'rgba(0,0,0,0.15)',
+            'rgba(0,0,0,0.35)',
+            'rgba(0,0,0,0.6)',
+            'rgba(0,0,0,0.8)',
+            'rgba(0,0,0,0.95)',
+          ]}
+          locations={[0, 0.35, 0.55, 0.65, 0.75, 0.85, 1]}
+          style={styles.gradientOverlay}
+        />
+
+        <View style={styles.content}>
+          <Text style={styles.category}>{card.category}</Text>
+
+          <Text style={styles.title}>{card.title}</Text>
+
+          <RenderHTML
+            contentWidth={SCREEN_WIDTH - 40}
+            source={{ html: card.description }}
+            tagsStyles={{
+              a: { color: '#58CC02' },
+              font: { color: '#ddd' },
+              p: { color: '#ddd', fontSize: 14 },
+            }}
+          />
+
+          <Text style={styles.source}>{card.source}</Text>
         </View>
-      );
-    }
-
-    if (currentIndex >= cards.length) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>🎉 You're all caught up!</Text>
-        </View>
-      );
-    }
-
-    return cards
-      .map((card, index) => {
-        if (index < currentIndex) return null;
-        if (index > currentIndex + 1) return null;
-
-        const isTop = index === currentIndex;
-
-        return (
-          <Animated.View
-            key={card.id}
-            style={[
-              styles.card,
-              isTop && { transform: [{ translateY }] },
-            ]}
-            {...(isTop ? panResponder.panHandlers : {})}
-          >
-            <Image source={{ uri: card.image }} style={styles.image} />
-
-            {/* 🔥 FIXED OVERLAY & GRADIENT */}
-            <View style={styles.overlay} />
-            <LinearGradient
-              colors={[
-                'rgba(0,0,0,0)',
-                'rgba(0,0,0,0.05)',
-                'rgba(0,0,0,0.15)',
-                'rgba(0,0,0,0.35)',
-                'rgba(0,0,0,0.6)',
-                'rgba(0,0,0,0.8)',
-                'rgba(0,0,0,0.95)',
-              ]}
-              locations={[0, 0.35, 0.55, 0.65, 0.75, 0.85, 1]}
-              style={styles.gradientOverlay}
-            />
-
-            <View style={styles.content}>
-              <Text style={styles.category}>{card.category}</Text>
-
-              <Text style={styles.title}>{card.title}</Text>
-
-              <RenderHTML
-                contentWidth={SCREEN_WIDTH - 40}
-                source={{ html: card.description }}
-                tagsStyles={{
-                  a: { color: '#58CC02' },
-                  font: { color: '#ddd' },
-                  p: { color: '#ddd', fontSize: 14 },
-                }}
-              />
-
-              <Text style={styles.source}>{card.source}</Text>
-            </View>
-          </Animated.View>
-        );
-      })
-      .reverse();
+      </View>
+    );
   };
 
   return (
@@ -405,7 +354,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
                   <Text style={styles.statsDetailLabel}>Experience Points</Text>
                   <Text style={styles.statsDetailValue}>{xp} XP</Text>
                   <Text style={styles.statsDetailDescription}>
-                    Earn 1 XP for every news article you swipe!
+                    Earn 1 XP for every 10 news articles you swipe!
                   </Text>
                 </View>
               </View>
@@ -415,7 +364,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
       </Modal>
 
       {/* 🔥 FEED */}
-      <View style={styles.feed}>{renderCards()}</View>
+      <View style={styles.feed}>
+        {loading ? (
+          <SkeletonLoader />
+        ) : cards.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No news available</Text>
+          </View>
+        ) : (
+          <PagerView
+            ref={pagerRef}
+            style={styles.pagerView}
+            initialPage={0}
+            orientation="vertical"
+            onPageSelected={handlePageSelected}
+          >
+            {cards.map((card) => renderCard(card))}
+          </PagerView>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -428,6 +395,10 @@ const styles = StyleSheet.create({
   feed: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
+  },
+
+  pagerView: {
+    flex: 1,
   },
 
   header: {
@@ -605,10 +576,17 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    position: 'absolute',
+    flex: 1,
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
     backgroundColor: '#1a1a1a', // Dark base for the card
+  },
+
+  skeletonCard: {
+    position: 'absolute',
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: '#1a1a1a',
   },
 
   image: {
