@@ -74,7 +74,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onPanResponderMove: (_, gesture) => {
-      position.setValue({ x: gesture.dx, y: gesture.dy });
       swipeDirection.setValue(gesture.dx);
     },
     onPanResponderRelease: (_, gesture) => {
@@ -84,37 +83,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
       } else if (gesture.dx < -SWIPE_THRESHOLD) {
         // Swipe left - Skip
         forceSwipe('left');
-      } else {
-        // Reset position
-        resetPosition();
       }
+      swipeDirection.setValue(0);
     },
   });
 
   const forceSwipe = (direction: 'left' | 'right') => {
-    const x = direction === 'right' ? SCREEN_WIDTH + 100 : -SCREEN_WIDTH - 100;
-    Animated.timing(position, {
-      toValue: { x, y: 0 },
-      duration: 250,
-      useNativeDriver: false,
-    }).start(() => onSwipeComplete(direction));
-  };
-
-  const onSwipeComplete = (direction: 'left' | 'right') => {
     const item = cards[currentIndex];
 
     // Handle the swipe action here (save to liked/skipped)
     console.log(`${direction === 'right' ? 'Liked' : 'Skipped'}: ${item.title}`);
 
-    position.setValue({ x: 0, y: 0 });
     setCurrentIndex(currentIndex + 1);
-  };
-
-  const resetPosition = () => {
-    Animated.spring(position, {
-      toValue: { x: 0, y: 0 },
-      useNativeDriver: false,
-    }).start();
   };
 
   const handleLike = () => {
@@ -126,31 +106,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
   };
 
   const getCardStyle = (index: number) => {
-    if (index === currentIndex) {
-      const rotate = position.x.interpolate({
-        inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-        outputRange: ['-30deg', '0deg', '30deg'],
-      });
-
-      const opacity = position.x.interpolate({
-        inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-        outputRange: [0.5, 1, 0.5],
-      });
-
-      return {
-        ...position.getLayout(),
-        transform: [{ rotate }],
-        opacity,
-      };
-    }
-
-    // Cards behind the current one
-    const scale = 1 - (index - currentIndex) * 0.05;
-    const translateY = (index - currentIndex) * 10;
-
     return {
-      transform: [{ scale }, { translateY }],
-      opacity: 1 - (index - currentIndex) * 0.2,
+      zIndex: 1000 - index,
     };
   };
 
@@ -167,7 +124,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
     return cards
       .map((card, index) => {
         if (index < currentIndex) return null;
-        if (index > currentIndex + 2) return null;
+        if (index > currentIndex + 1) return null; // Only show current and next card
 
         const isTopCard = index === currentIndex;
 
@@ -175,6 +132,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
           <Animated.View
             key={card.id}
             style={[styles.card, getCardStyle(index)]}
+            pointerEvents={isTopCard ? 'auto' : 'none'}
             {...(isTopCard ? panResponder.panHandlers : {})}
           >
             <Image source={{ uri: card.image }} style={styles.cardImage} />
@@ -214,15 +172,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
             )}
 
             <View style={styles.cardContent}>
-              <View>
+              <View style={styles.cardTopSection}>
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryText}>{card.category}</Text>
                 </View>
-                <Text style={styles.cardTitle}>{card.title}</Text>
-                <Text style={styles.cardDescription} numberOfLines={2}>
+                <Text style={styles.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+                  {card.title}
+                </Text>
+                <Text style={styles.cardDescription} numberOfLines={2} ellipsizeMode="tail">
                   {card.description}
                 </Text>
-                <Text style={styles.cardSource}>{card.source}</Text>
+              </View>
+              <View style={styles.cardBottomSection}>
+                <Text style={styles.cardSource} numberOfLines={1} ellipsizeMode="tail">
+                  {card.source}
+                </Text>
               </View>
             </View>
           </Animated.View>
@@ -385,45 +349,55 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
   card: {
     position: 'absolute',
-    width: SCREEN_WIDTH - 40,
-    height: SCREEN_HEIGHT * 0.6,
+    width: SCREEN_WIDTH - 32,
+    height: '96%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
     overflow: 'hidden',
   },
   cardImage: {
     width: '100%',
-    height: '55%',
+    height: '60%',
     backgroundColor: '#E5E5E5',
   },
   cardContent: {
+    height: '40%',
+    padding: 20,
+    justifyContent: 'space-between',
+  },
+  cardTopSection: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'flex-start',
+    overflow: 'hidden',
+  },
+  cardBottomSection: {
+    paddingTop: 8,
+    minHeight: 20,
   },
   categoryBadge: {
     backgroundColor: '#58CC02',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
     alignSelf: 'flex-start',
   },
   categoryText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
   },
   cardTitle: {
@@ -432,15 +406,15 @@ const styles = StyleSheet.create({
     color: '#3C3C3C',
     marginTop: 12,
     marginBottom: 8,
+    lineHeight: 24,
   },
   cardDescription: {
     fontSize: 14,
     color: '#777777',
     lineHeight: 20,
-    marginBottom: 8,
   },
   cardSource: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#ADADAD',
     fontWeight: '600',
   },
