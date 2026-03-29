@@ -5,6 +5,7 @@ import DuoButton from '../components/DuoButton';
 
 interface TopicsScreenProps {
   onContinue: () => void;
+  isSettingsMode?: boolean;
 }
 
 const TOPICS = [
@@ -19,7 +20,7 @@ const TOPICS = [
   { id: '9', name: 'Entertainment', animation: require('../assets/animations/entertainment.json'), color: '#8E44AD' },
 ];
 
-const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue }) => {
+const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode = false }) => {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   const toggleTopic = (topicId: string) => {
@@ -231,27 +232,29 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue }) => {
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Button */}
-      <View style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'white',
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 32,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-      }}>
-        <DuoButton
-          title={`CONTINUE${selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}`}
-          onPress={onContinue}
-          disabled={selectedTopics.length === 0}
-          variant="primary"
-          fullWidth
-        />
-      </View>
+      {/* Fixed Bottom Button - Only show if not in settings mode */}
+      {!isSettingsMode && (
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'white',
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 32,
+          borderTopWidth: 1,
+          borderTopColor: '#F0F0F0',
+        }}>
+          <DuoButton
+            title={`CONTINUE${selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}`}
+            onPress={onContinue}
+            disabled={selectedTopics.length === 0}
+            variant="primary"
+            fullWidth
+          />
+        </View>
+      )}
     </View>
   );
 };
