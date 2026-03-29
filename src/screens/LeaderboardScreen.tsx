@@ -98,7 +98,6 @@ const LeaderboardScreen: React.FC = () => {
             leaderboardData.push({
               rank: leaderboardData.length + 1,
               name: userInfo.name || 'You',
-              email: userInfo.email,
               streak: userStreak,
               isCurrentUser: true,
             });
