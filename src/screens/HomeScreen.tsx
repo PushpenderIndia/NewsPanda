@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, Image, Animated, PanResponder, Dimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DuoButton from '../components/DuoButton';
 
 const mascotHappy = require('../assets/mascot-happy.png');
 
@@ -95,14 +94,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
     console.log(`${direction === 'right' ? 'Liked' : 'Skipped'}: ${item.title}`);
 
     setCurrentIndex(currentIndex + 1);
-  };
-
-  const handleLike = () => {
-    forceSwipe('right');
-  };
-
-  const handleSkip = () => {
-    forceSwipe('left');
   };
 
   const getCardStyle = (index: number) => {
@@ -228,30 +219,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ userInfo }) => {
       </View>
 
       <View style={styles.cardsContainer}>{renderCards()}</View>
-
-      {currentIndex < cards.length && (
-        <View style={styles.buttonsContainer}>
-          <View style={styles.buttonWrapper}>
-            <DuoButton
-              title="SKIP"
-              onPress={handleSkip}
-              variant="outline"
-              size="large"
-              fullWidth
-            />
-          </View>
-          <View style={styles.buttonSpacer} />
-          <View style={styles.buttonWrapper}>
-            <DuoButton
-              title="INTERESTED"
-              onPress={handleLike}
-              variant="primary"
-              size="large"
-              fullWidth
-            />
-          </View>
-        </View>
-      )}
     </SafeAreaView>
   );
 };
