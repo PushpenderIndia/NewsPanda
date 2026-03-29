@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import LottieView from 'lottie-react-native';
 import DuoButton from '../components/DuoButton';
+import { saveSelectedTopics, saveUserInfo, setOnboardingCompleted, getSelectedTopics } from '../services/storage';
 
 interface TopicsScreenProps {
-  onContinue: (topics: string[]) => void;
+  onContinue: (topics?: string[]) => void;
   isSettingsMode?: boolean;
+  userInfo?: any;
 }
 
 const TOPICS = [
@@ -20,8 +22,19 @@ const TOPICS = [
   { id: '9', name: 'Entertainment', animation: require('../assets/animations/entertainment.json'), color: '#8E44AD' },
 ];
 
-const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode = false }) => {
+const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode = false, userInfo }) => {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+
+  // Load saved topics on mount
+  useEffect(() => {
+    const loadSavedTopics = async () => {
+      const savedTopics = await getSelectedTopics();
+      if (savedTopics.length > 0) {
+        setSelectedTopics(savedTopics);
+      }
+    };
+    loadSavedTopics();
+  }, []);
 
   const toggleTopic = (topicId: string) => {
     setSelectedTopics((prev) =>
@@ -37,6 +50,20 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
 
   const deselectAll = () => {
     setSelectedTopics([]);
+  };
+
+  const handleContinue = async () => {
+    // Save topics to AsyncStorage
+    await saveSelectedTopics(selectedTopics);
+
+    // If not in settings mode, save user info and mark onboarding as completed
+    if (!isSettingsMode && userInfo) {
+      await saveUserInfo(userInfo);
+      await setOnboardingCompleted();
+    }
+
+    // Call the onContinue callback
+    onContinue(selectedTopics);
   };
 
   return (
@@ -248,7 +275,7 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
         }}>
           <DuoButton
             title={`CONTINUE${selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}`}
-            onPress={() => onContinue(selectedTopics)}
+            onPress={handleContinue}
             disabled={selectedTopics.length === 0}
             variant="primary"
             fullWidth

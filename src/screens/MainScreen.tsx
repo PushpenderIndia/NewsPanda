@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from './HomeScreen';
 import NewsPodcastScreen from './NewsPodcastScreen';
 import TopicsScreen from './TopicsScreen';
 import BottomTabBar from '../components/BottomTabBar';
+import { getSelectedTopics, saveSelectedTopics } from '../services/storage';
+import { convertIdsToNames } from '../utils/topicMapping';
 
 type TabType = 'home' | 'podcast' | 'map' | 'settings';
 
@@ -16,6 +18,26 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
+  // Load saved topics on mount
+  useEffect(() => {
+    const loadTopics = async () => {
+      const savedTopicIds = await getSelectedTopics();
+      // Convert IDs to names for HomeScreen
+      const topicNames = convertIdsToNames(savedTopicIds);
+      setSelectedTopics(topicNames);
+    };
+    loadTopics();
+  }, []);
+
+  const handleTopicsUpdate = async (topics?: string[]) => {
+    if (topics) {
+      // Topics are already saved in TopicsScreen, just update local state
+      const topicNames = convertIdsToNames(topics);
+      setSelectedTopics(topicNames);
+    }
+    setActiveTab('home');
+  };
+
   const renderScreen = () => {
     switch (activeTab) {
       case 'home':
@@ -25,11 +47,9 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
       case 'settings':
         return (
           <TopicsScreen
-            onContinue={(topics) => {
-              setSelectedTopics(topics);
-              setActiveTab('home');
-            }}
+            onContinue={handleTopicsUpdate}
             isSettingsMode
+            userInfo={userInfo}
           />
         );
       default:
