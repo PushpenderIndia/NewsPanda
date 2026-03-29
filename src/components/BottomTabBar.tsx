@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-type TabType = 'home' | 'podcast' | 'settings';
+type TabType = 'home' | 'podcast' | 'map' | 'settings';
 
 interface BottomTabBarProps {
   activeTab: TabType;
@@ -12,6 +12,7 @@ interface BottomTabBarProps {
 const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabChange }) => {
   return (
     <View style={styles.container}>
+      {/* Home */}
       <TouchableOpacity
         style={[styles.tab, activeTab === 'home' && styles.activeTab]}
         onPress={() => onTabChange('home')}
@@ -26,6 +27,7 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabChange }) =
         </Text>
       </TouchableOpacity>
 
+      {/* Podcast */}
       <TouchableOpacity
         style={[styles.tab, activeTab === 'podcast' && styles.activeTab]}
         onPress={() => onTabChange('podcast')}
@@ -40,6 +42,22 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabChange }) =
         </Text>
       </TouchableOpacity>
 
+      {/* Map */}
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'map' && styles.activeTab]}
+        onPress={() => onTabChange('map')}
+      >
+        <Icon
+          name={activeTab === 'map' ? 'map' : 'map-outline'}
+          size={26}
+          color={activeTab === 'map' ? '#58CC02' : '#777777'}
+        />
+        <Text style={[styles.tabText, activeTab === 'map' && styles.activeTabText]}>
+          Map
+        </Text>
+      </TouchableOpacity>
+
+      {/* Settings */}
       <TouchableOpacity
         style={[styles.tab, activeTab === 'settings' && styles.activeTab]}
         onPress={() => onTabChange('settings')}
@@ -78,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDE4',
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11, 
     fontWeight: '600',
     color: '#777777',
     marginTop: 4,
