@@ -6,10 +6,11 @@ import {
   ScrollView,
   Image,
   Animated,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { getUserInfo, getStreak } from '../services/storage';
+import { getUserInfo, getStreak, getXP } from '../services/storage';
 import { getLeaderboard } from '../services/api';
 
 const mascotHappy = require('../assets/mascot-happy.png');
@@ -19,8 +20,11 @@ interface LeaderboardUser {
   name: string;
   email: string;
   streak: number;
+  xp?: number;
   isCurrentUser?: boolean;
 }
+
+type LeaderboardMode = 'xp' | 'streak';
 
 // 🔥 ANIMATED SKELETON COMPONENT
 const SkeletonLoader = () => {
@@ -73,10 +77,18 @@ const LeaderboardScreen: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<LeaderboardMode>('streak');
 
   useEffect(() => {
     loadLeaderboard();
   }, []);
+
+  // Reload leaderboard when mode changes
+  useEffect(() => {
+    if (leaderboard.length > 0) {
+      loadLeaderboard();
+    }
+  }, [mode]);
 
   const loadLeaderboard = async () => {
     try {
@@ -84,7 +96,8 @@ const LeaderboardScreen: React.FC = () => {
 
       const userInfo = await getUserInfo();
       const userStreak = await getStreak();
-      const response = await getLeaderboard(10);
+      const userXP = await getXP();
+      const response = await getLeaderboard(10, mode);
 
       if (response.success && response.leaderboard) {
         const leaderboardData = response.leaderboard;
@@ -99,6 +112,7 @@ const LeaderboardScreen: React.FC = () => {
               rank: leaderboardData.length + 1,
               name: userInfo.name || 'You',
               streak: userStreak,
+              xp: userXP,
               isCurrentUser: true,
             });
             setCurrentUserRank(leaderboardData.length);
@@ -137,6 +151,41 @@ const LeaderboardScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Modern Radio Toggle */}
+      <View style={styles.toggleContainer}>
+        <View style={styles.toggleWrapper}>
+          <TouchableOpacity
+            style={[styles.toggleButton, mode === 'streak' && styles.toggleButtonActive]}
+            onPress={() => setMode('streak')}
+            activeOpacity={0.8}
+          >
+            <Icon
+              name="fire"
+              size={20}
+              color={mode === 'streak' ? '#FFFFFF' : '#AFB2B6'}
+            />
+            <Text style={[styles.toggleText, mode === 'streak' && styles.toggleTextActive]}>
+              Daily Streaks
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.toggleButton, mode === 'xp' && styles.toggleButtonActive]}
+            onPress={() => setMode('xp')}
+            activeOpacity={0.8}
+          >
+            <Icon
+              name="star"
+              size={20}
+              color={mode === 'xp' ? '#FFFFFF' : '#AFB2B6'}
+            />
+            <Text style={[styles.toggleText, mode === 'xp' && styles.toggleTextActive]}>
+              Experience Points
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {loading ? (
         <SkeletonLoader />
       ) : (
@@ -167,8 +216,10 @@ const LeaderboardScreen: React.FC = () => {
                 <View style={[styles.podiumPedestal, styles.podiumSecond]}>
                   <Icon name="medal" size={28} color="#FFFFFF" style={styles.podiumIcon} />
                   <View style={styles.podiumStreakContainer}>
-                    <Text style={styles.podiumStreak}>{leaderboard[1].streak}</Text>
-                    <Icon name="fire" size={16} color="#FFFFFF" />
+                    <Text style={styles.podiumStreak}>
+                      {mode === 'xp' ? (leaderboard[1].xp || 0) : leaderboard[1].streak}
+                    </Text>
+                    <Icon name={mode === 'xp' ? 'star' : 'fire'} size={16} color="#FFFFFF" />
                   </View>
                 </View>
               </View>
@@ -182,8 +233,10 @@ const LeaderboardScreen: React.FC = () => {
                 <View style={[styles.podiumPedestal, styles.podiumFirst]}>
                   <Icon name="crown" size={32} color="#FFFFFF" style={styles.podiumIcon} />
                   <View style={styles.podiumStreakContainer}>
-                    <Text style={styles.podiumStreak}>{leaderboard[0].streak}</Text>
-                    <Icon name="fire" size={18} color="#FFFFFF" />
+                    <Text style={styles.podiumStreak}>
+                      {mode === 'xp' ? (leaderboard[0].xp || 0) : leaderboard[0].streak}
+                    </Text>
+                    <Icon name={mode === 'xp' ? 'star' : 'fire'} size={18} color="#FFFFFF" />
                   </View>
                 </View>
               </View>
@@ -197,8 +250,10 @@ const LeaderboardScreen: React.FC = () => {
                 <View style={[styles.podiumPedestal, styles.podiumThird]}>
                   <Icon name="medal" size={24} color="#FFFFFF" style={styles.podiumIcon} />
                   <View style={styles.podiumStreakContainer}>
-                    <Text style={styles.podiumStreak}>{leaderboard[2].streak}</Text>
-                    <Icon name="fire" size={16} color="#FFFFFF" />
+                    <Text style={styles.podiumStreak}>
+                      {mode === 'xp' ? (leaderboard[2].xp || 0) : leaderboard[2].streak}
+                    </Text>
+                    <Icon name={mode === 'xp' ? 'star' : 'fire'} size={16} color="#FFFFFF" />
                   </View>
                 </View>
               </View>
@@ -231,8 +286,10 @@ const LeaderboardScreen: React.FC = () => {
                 </View>
 
                 <View style={styles.leaderboardStreak}>
-                  <Text style={styles.leaderboardStreakNumber}>{user.streak}</Text>
-                  <Icon name="fire" size={20} color="#FF9600" />
+                  <Text style={styles.leaderboardStreakNumber}>
+                    {mode === 'xp' ? (user.xp || 0) : user.streak}
+                  </Text>
+                  <Icon name={mode === 'xp' ? 'star' : 'fire'} size={20} color={mode === 'xp' ? '#FFC107' : '#FF9600'} />
                 </View>
               </View>
             ))}
@@ -305,6 +362,43 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#AFB2B6',
     marginTop: 2,
+  },
+  toggleContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F7F7F7',
+  },
+  toggleWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 2,
+    borderColor: '#E5E5E5',
+    borderBottomWidth: 3,
+  },
+  toggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#58CC02',
+    borderBottomWidth: 2,
+    borderBottomColor: '#46A302',
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#AFB2B6',
+  },
+  toggleTextActive: {
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,

@@ -103,11 +103,13 @@ export interface LeaderboardResponse {
 }
 
 /**
- * Get leaderboard - top users by streak
+ * Get leaderboard - top users by streak or XP
+ * @param limit - Number of users to return (default: 10)
+ * @param sortBy - Sort by 'streak' or 'xp' (default: 'streak')
  */
-export const getLeaderboard = async (limit: number = 10): Promise<LeaderboardResponse> => {
+export const getLeaderboard = async (limit: number = 10, sortBy: 'streak' | 'xp' = 'streak'): Promise<LeaderboardResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/newspanda/leaderboard?limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/leaderboard?limit=${limit}&sort_by=${sortBy}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

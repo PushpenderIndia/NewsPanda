@@ -46,6 +46,7 @@ const TOPIC_RSS_MAP: Record<string, string> = {
   Crypto: "crypto bitcoin blockchain",
   "World News": "world international global",
   Entertainment: "entertainment movies bollywood",
+  Fashion: "fashion style trends clothing",
 };
 
 const buildRSSUrls = (topics: string[]) => {
@@ -109,40 +110,52 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const urls = buildRSSUrls(topics.length ? topics : ["Tech"]);
+      const selectedTopics = topics.length ? topics : ["Tech"];
       const parser = new XMLParser();
 
       let allArticles: NewsArticle[] = [];
 
-      for (const url of urls) {
-        const res = await fetch(url);
-        const xml = await res.text();
+      // Fetch news for each topic and tag them appropriately
+      for (let i = 0; i < selectedTopics.length; i++) {
+        const topicName = selectedTopics[i];
+        const query = TOPIC_RSS_MAP[topicName] || topicName;
+        const url = `https://news.google.com/rss/search?q=${encodeURIComponent(
+          query + " when:1d"
+        )}&hl=en-IN&gl=IN&ceid=IN:en`;
 
-        const data = parser.parse(xml);
-        const items = data?.rss?.channel?.item || [];
+        try {
+          const res = await fetch(url);
+          const xml = await res.text();
 
-        const formatted = items.map((item: any, index: number) => {
-          const [title, source] = (item.title || "").split(" - ");
-          
-          // Clean up the description to remove the duplicated title text injected by Google News
-          let cleanDescription = item.description || "";
-          if (title) {
-            cleanDescription = cleanDescription.replace(new RegExp(title, 'g'), '');
-          }
+          const data = parser.parse(xml);
+          const items = data?.rss?.channel?.item || [];
 
-          return {
-            id: `${Math.random()}`,
-            title: title || "No title",
-            description: cleanDescription,
-            image: `https://picsum.photos/600/900?random=${index}`,
-            source: source || "News",
-            category: "General",
-          };
-        });
+          const formatted = items.map((item: any, index: number) => {
+            const [title, source] = (item.title || "").split(" - ");
 
-        allArticles = [...allArticles, ...formatted];
+            // Clean up the description to remove the duplicated title text injected by Google News
+            let cleanDescription = item.description || "";
+            if (title) {
+              cleanDescription = cleanDescription.replace(new RegExp(title, 'g'), '');
+            }
+
+            return {
+              id: `${Math.random()}-${topicName}-${index}`,
+              title: title || "No title",
+              description: cleanDescription,
+              image: `https://picsum.photos/600/900?random=${Date.now()}-${i}-${index}`,
+              source: source || "News",
+              category: topicName, // Tag with actual topic name
+            };
+          });
+
+          allArticles = [...allArticles, ...formatted];
+        } catch (topicError) {
+          console.log(`Error fetching news for ${topicName}:`, topicError);
+        }
       }
 
+      // Randomize all articles after tagging them
       allArticles.sort(() => 0.5 - Math.random());
 
       setCards(allArticles);

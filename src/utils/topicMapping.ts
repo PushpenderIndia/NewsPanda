@@ -9,6 +9,7 @@ export const TOPICS = [
   { id: '7', name: 'Crypto' },
   { id: '8', name: 'World News' },
   { id: '9', name: 'Entertainment' },
+  { id: '10', name: 'Fashion' },
 ];
 
 export const getTopicNameById = (id: string): string => {

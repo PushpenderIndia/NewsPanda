@@ -22,6 +22,7 @@ const TOPICS = [
   { id: '7', name: 'Crypto', animation: require('../assets/animations/crypto.json'), color: '#00CD9C' },
   { id: '8', name: 'World News', animation: require('../assets/animations/world-news.json'), color: '#FF6E83' },
   { id: '9', name: 'Entertainment', animation: require('../assets/animations/entertainment.json'), color: '#8E44AD' },
+  { id: '10', name: 'Fashion', animation: require('../assets/animations/fashion.json'), color: '#FF69B4' },
 ];
 
 const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode = false, userInfo }) => {
@@ -279,14 +280,14 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
                 onPress={() => toggleTopic(topic.id)}
                 style={{
                   width: '47%',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isSelected ? '#E8F5E9' : '#FFFFFF',
                   borderRadius: 16,
                   paddingVertical: 24,
                   paddingHorizontal: 16,
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderWidth: 2.5,
-                  borderColor: isSelected ? topic.color : '#E5E5E5',
+                  borderColor: isSelected ? '#58CC02' : '#E5E5E5',
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.03,
@@ -331,7 +332,7 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
                     width: 24,
                     height: 24,
                     borderRadius: 12,
-                    backgroundColor: topic.color,
+                    backgroundColor: '#58CC02',
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}>
