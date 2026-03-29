@@ -87,3 +87,66 @@ export const updateStreak = async (email: string): Promise<UserResponse> => {
     throw error;
   }
 };
+
+export interface LeaderboardUser {
+  rank: number;
+  name: string;
+  email: string;
+  streak: number;
+}
+
+export interface LeaderboardResponse {
+  success: boolean;
+  leaderboard: LeaderboardUser[];
+  total_users: number;
+  error?: string;
+}
+
+/**
+ * Get leaderboard - top users by streak
+ */
+export const getLeaderboard = async (limit: number = 10): Promise<LeaderboardResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/leaderboard?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    throw error;
+  }
+};
+
+export interface XPResponse {
+  success: boolean;
+  xp: number;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Add XP to user
+ * Call this when user swipes a news card
+ */
+export const addXP = async (email: string, xp: number = 1): Promise<XPResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/xp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, xp }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error adding XP:', error);
+    throw error;
+  }
+};

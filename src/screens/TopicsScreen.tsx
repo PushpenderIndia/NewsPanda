@@ -50,12 +50,12 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
       await saveSelectedTopics(newSelectedTopics);
 
       // Sync with backend if user info is available
-      if (userInfo?.user?.email) {
+      if (userInfo?.email) {
         try {
           const topicNames = convertIdsToNames(newSelectedTopics);
           const response = await syncUserData({
-            email: userInfo.user.email,
-            name: userInfo.user.name || userInfo.user.givenName || '',
+            email: userInfo.email,
+            name: userInfo.name || '',
             topics: topicNames,
           });
 
@@ -79,12 +79,12 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
     if (isSettingsMode) {
       await saveSelectedTopics(allTopicIds);
 
-      if (userInfo?.user?.email) {
+      if (userInfo?.email) {
         try {
           const topicNames = convertIdsToNames(allTopicIds);
           await syncUserData({
-            email: userInfo.user.email,
-            name: userInfo.user.name || userInfo.user.givenName || '',
+            email: userInfo.email,
+            name: userInfo.name || '',
             topics: topicNames,
           });
         } catch (error) {
@@ -101,11 +101,11 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
     if (isSettingsMode) {
       await saveSelectedTopics([]);
 
-      if (userInfo?.user?.email) {
+      if (userInfo?.email) {
         try {
           await syncUserData({
-            email: userInfo.user.email,
-            name: userInfo.user.name || userInfo.user.givenName || '',
+            email: userInfo.email,
+            name: userInfo.name || '',
             topics: [],
           });
         } catch (error) {
@@ -126,12 +126,12 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
     }
 
     // Sync with backend
-    if (userInfo?.user?.email) {
+    if (userInfo?.email) {
       try {
         const topicNames = convertIdsToNames(selectedTopics);
         const response = await syncUserData({
-          email: userInfo.user.email,
-          name: userInfo.user.name || userInfo.user.givenName || '',
+          email: userInfo.email,
+          name: userInfo.name || '',
           topics: topicNames,
         });
 

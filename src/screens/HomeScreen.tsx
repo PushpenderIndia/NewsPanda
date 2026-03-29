@@ -12,8 +12,9 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RenderHTML from 'react-native-render-html';
-import { getStreak, saveStreak, getUserInfo } from '../services/storage';
-import { updateStreak as updateStreakAPI } from '../services/api';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { getStreak, saveStreak, getUserInfo, getXP, saveXP } from '../services/storage';
+import { updateStreak as updateStreakAPI, addXP } from '../services/api';
 
 const mascotHappy = require('../assets/mascot-happy.png');
 
@@ -97,6 +98,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
   const [cards, setCards] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
+  const [xp, setXp] = useState(0);
 
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -155,18 +157,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
     fetchNews();
   }, [topics]);
 
-  // 🔥 Load and update streak
+  // 🔥 Load and update streak and XP
   useEffect(() => {
-    const loadAndUpdateStreak = async () => {
+    const loadAndUpdateData = async () => {
       try {
-        // Load local streak first
+        // Load local data first
         const localStreak = await getStreak();
+        const localXp = await getXP();
         setStreak(localStreak);
+        setXp(localXp);
 
         // Try to update from backend
         const userInfo = await getUserInfo();
-        if (userInfo?.user?.email) {
-          const response = await updateStreakAPI(userInfo.user.email);
+        if (userInfo?.email) {
+          const response = await updateStreakAPI(userInfo.email);
           if (response.streak !== undefined) {
             setStreak(response.streak);
             await saveStreak(response.streak);
@@ -174,11 +178,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
         }
       } catch (error) {
         console.error('Error updating streak:', error);
-        // Keep local streak if backend fails
+        // Keep local data if backend fails
       }
     };
 
-    loadAndUpdateStreak();
+    loadAndUpdateData();
   }, []);
 
   // 🚀 Preload next 5
@@ -195,8 +199,22 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
       translateY.setValue(g.dy);
     },
 
-    onPanResponderRelease: (_, g) => {
+    onPanResponderRelease: async (_, g) => {
       if (g.dy < -SWIPE_THRESHOLD) {
+        // Award XP for swipe
+        try {
+          const userInfo = await getUserInfo();
+          if (userInfo?.email) {
+            const response = await addXP(userInfo.email, 1);
+            if (response.success && response.xp !== undefined) {
+              setXp(response.xp);
+              await saveXP(response.xp);
+            }
+          }
+        } catch (error) {
+          console.error('Error adding XP:', error);
+        }
+
         Animated.timing(translateY, {
           toValue: -SCREEN_HEIGHT,
           duration: 250,
@@ -328,6 +346,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
             <Text style={styles.streakEmoji}>🔥</Text>
             <Text style={styles.streakNumber}>{streak}</Text>
           </View>
+          <View style={styles.xpContainer}>
+            <Text style={styles.xpEmoji}>⭐</Text>
+            <Text style={styles.xpNumber}>{xp}</Text>
+          </View>
         </View>
       </View>
 
@@ -396,22 +418,41 @@ const styles = StyleSheet.create({
 
   progressText: { fontSize: 12, fontWeight: 'bold', color: '#777' },
 
-  headerRight: { marginLeft: 12 },
+  headerRight: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+  },
 
   streakContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF4E6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: '#FF9500',
+    marginRight: 8, 
   },
 
-  streakEmoji: { fontSize: 18, marginRight: 4 },
+  streakEmoji: { fontSize: 16, marginRight: 4 },
 
   streakNumber: { fontSize: 16, fontWeight: 'bold', color: '#FF9500' },
+
+  xpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#58CC02',
+  },
+
+  xpEmoji: { fontSize: 16, marginRight: 4 }, 
+
+  xpNumber: { fontSize: 16, fontWeight: 'bold', color: '#58CC02' },
 
   card: {
     position: 'absolute',

@@ -4,11 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from './HomeScreen';
 import NewsPodcastScreen from './NewsPodcastScreen';
 import TopicsScreen from './TopicsScreen';
+import LeaderboardScreen from './LeaderboardScreen';
 import BottomTabBar from '../components/BottomTabBar';
 import { getSelectedTopics, saveSelectedTopics } from '../services/storage';
 import { convertIdsToNames } from '../utils/topicMapping';
 
-type TabType = 'home' | 'podcast' | 'map' | 'settings';
+type TabType = 'home' | 'podcast' | 'leaderboard' | 'settings';
 
 interface MainScreenProps {
   userInfo?: any;
@@ -32,7 +33,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
 
   // Reload topics when switching tabs (to catch settings changes)
   useEffect(() => {
-    if (activeTab === 'home' || activeTab === 'podcast') {
+    if (activeTab === 'home' || activeTab === 'podcast' || activeTab === 'leaderboard') {
       const loadTopics = async () => {
         const savedTopicIds = await getSelectedTopics();
         const topicNames = convertIdsToNames(savedTopicIds);
@@ -62,6 +63,8 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
         return <HomeScreen key={refreshKey} userInfo={userInfo} topics={selectedTopics} />;
       case 'podcast':
         return <NewsPodcastScreen topics={selectedTopics} />;
+      case 'leaderboard':
+        return <LeaderboardScreen />;
       case 'settings':
         return (
           <TopicsScreen

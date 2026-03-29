@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-type TabType = 'home' | 'podcast' | 'settings';
+type TabType = 'home' | 'podcast' | 'leaderboard' | 'settings';
 
 interface BottomTabBarProps {
   activeTab: TabType;
@@ -39,6 +39,21 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabChange }) =
         />
         <Text style={[styles.tabText, activeTab === 'podcast' && styles.activeTabText]}>
           Podcast
+        </Text>
+      </TouchableOpacity>
+
+      {/* Leaderboard */}
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'leaderboard' && styles.activeTab]}
+        onPress={() => onTabChange('leaderboard')}
+      >
+        <Icon
+          name={activeTab === 'leaderboard' ? 'trophy' : 'trophy-outline'}
+          size={26}
+          color={activeTab === 'leaderboard' ? '#58CC02' : '#777777'}
+        />
+        <Text style={[styles.tabText, activeTab === 'leaderboard' && styles.activeTabText]}>
+          Ranks
         </Text>
       </TouchableOpacity>
 

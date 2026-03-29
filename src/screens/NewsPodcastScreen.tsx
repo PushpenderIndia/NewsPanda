@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LottieView from 'lottie-react-native';
+import PodcastPlayerScreen from './PodcastPlayerScreen';
 
 const mascotHappy = require('../assets/mascot-happy.png');
 
@@ -36,6 +37,9 @@ interface NewsPodcastScreenProps {
 }
 
 const NewsPodcastScreen: React.FC<NewsPodcastScreenProps> = ({ topics = [] }) => {
+  const [selectedPodcast, setSelectedPodcast] = useState<any>(null);
+  const [showPlayer, setShowPlayer] = useState(false);
+
   // Generate podcasts based on selected topics
   const generatePodcasts = () => {
     if (topics.length === 0) {
@@ -52,12 +56,23 @@ const NewsPodcastScreen: React.FC<NewsPodcastScreenProps> = ({ topics = [] }) =>
       id: `${index + 1}`,
       title: `${topic} News Daily Briefing`,
       description: `Your daily dose of ${topic} news in a quick podcast`,
-      duration: `${Math.floor(Math.random() * 5) + 8} min`,
+      duration: '35 sec',
       category: topic,
     }));
   };
 
   const podcasts = generatePodcasts();
+
+  const handlePodcastPress = (podcast: any) => {
+    setSelectedPodcast(podcast);
+    setShowPlayer(true);
+  };
+
+  const handleClosePlayer = () => {
+    setShowPlayer(false);
+    setSelectedPodcast(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header matching HomeScreen style */}
@@ -85,7 +100,12 @@ const NewsPodcastScreen: React.FC<NewsPodcastScreenProps> = ({ topics = [] }) =>
           const topicAnimation = TOPIC_ANIMATIONS[podcast.category] || TOPIC_ANIMATIONS.Tech;
 
           return (
-            <View key={podcast.id} style={styles.podcastCard}>
+            <TouchableOpacity
+              key={podcast.id}
+              style={styles.podcastCard}
+              onPress={() => handlePodcastPress(podcast)}
+              activeOpacity={0.7}
+            >
               <View style={[styles.podcastIcon, { backgroundColor: `${topicColor}15` }]}>
                 <LottieView
                   source={topicAnimation}
@@ -102,10 +122,26 @@ const NewsPodcastScreen: React.FC<NewsPodcastScreenProps> = ({ topics = [] }) =>
                 <Text style={styles.podcastDescription}>{podcast.description}</Text>
                 <Text style={styles.podcastDuration}>{podcast.duration}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
+
+      {/* Podcast Player Modal */}
+      <Modal
+        visible={showPlayer}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={handleClosePlayer}
+      >
+        {selectedPodcast && (
+          <PodcastPlayerScreen
+            podcastTitle={selectedPodcast.title}
+            podcastCategory={selectedPodcast.category}
+            onClose={handleClosePlayer}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 };

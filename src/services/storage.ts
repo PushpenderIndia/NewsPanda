@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   SELECTED_TOPICS: '@newspanda:selected_topics',
   ONBOARDING_COMPLETED: '@newspanda:onboarding_completed',
   STREAK: '@newspanda:streak',
+  XP: '@newspanda:xp',
 };
 
 // User Info Storage
@@ -100,6 +101,25 @@ export const getStreak = async (): Promise<number> => {
   }
 };
 
+// XP Storage
+export const saveXP = async (xp: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.XP, xp.toString());
+  } catch (error) {
+    console.error('Error saving XP:', error);
+  }
+};
+
+export const getXP = async (): Promise<number> => {
+  try {
+    const xp = await AsyncStorage.getItem(STORAGE_KEYS.XP);
+    return xp ? parseInt(xp, 10) : 0;
+  } catch (error) {
+    console.error('Error getting XP:', error);
+    return 0;
+  }
+};
+
 // Clear all app data
 export const clearAllData = async (): Promise<void> => {
   try {
@@ -108,6 +128,7 @@ export const clearAllData = async (): Promise<void> => {
       STORAGE_KEYS.SELECTED_TOPICS,
       STORAGE_KEYS.ONBOARDING_COMPLETED,
       STORAGE_KEYS.STREAK,
+      STORAGE_KEYS.XP,
     ]);
   } catch (error) {
     console.error('Error clearing all data:', error);
