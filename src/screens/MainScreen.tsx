@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from './HomeScreen';
 import NewsPodcastScreen from './NewsPodcastScreen';
 import TopicsScreen from './TopicsScreen';
-import MapScreen from './MapScreen';
 import BottomTabBar from '../components/BottomTabBar';
 
 type TabType = 'home' | 'podcast' | 'map' | 'settings';
@@ -22,8 +21,6 @@ const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
         return <HomeScreen userInfo={userInfo} />;
       case 'podcast':
         return <NewsPodcastScreen />;
-      case 'map':
-        return <MapScreen />;
       case 'settings':
         return <TopicsScreen onContinue={() => setActiveTab('home')} isSettingsMode />;
       default:

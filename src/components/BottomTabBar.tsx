@@ -42,21 +42,6 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabChange }) =
         </Text>
       </TouchableOpacity>
 
-      {/* Map */}
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'map' && styles.activeTab]}
-        onPress={() => onTabChange('map')}
-      >
-        <Icon
-          name={activeTab === 'map' ? 'map' : 'map-outline'}
-          size={26}
-          color={activeTab === 'map' ? '#58CC02' : '#777777'}
-        />
-        <Text style={[styles.tabText, activeTab === 'map' && styles.activeTabText]}>
-          Map
-        </Text>
-      </TouchableOpacity>
-
       {/* Settings */}
       <TouchableOpacity
         style={[styles.tab, activeTab === 'settings' && styles.activeTab]}
@@ -96,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDE4',
   },
   tabText: {
-    fontSize: 11, 
+    fontSize: 13, 
     fontWeight: '600',
     color: '#777777',
     marginTop: 4,
