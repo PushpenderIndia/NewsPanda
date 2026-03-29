@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-type TabType = 'home' | 'podcast' | 'map' | 'settings';
+type TabType = 'home' | 'podcast' | 'settings';
 
 interface BottomTabBarProps {
   activeTab: TabType;

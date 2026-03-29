@@ -4,7 +4,7 @@ import LottieView from 'lottie-react-native';
 import DuoButton from '../components/DuoButton';
 
 interface TopicsScreenProps {
-  onContinue: () => void;
+  onContinue: (topics: string[]) => void;
   isSettingsMode?: boolean;
 }
 
@@ -248,7 +248,7 @@ const TopicsScreen: React.FC<TopicsScreenProps> = ({ onContinue, isSettingsMode 
         }}>
           <DuoButton
             title={`CONTINUE${selectedTopics.length > 0 ? ` (${selectedTopics.length})` : ''}`}
-            onPress={onContinue}
+            onPress={() => onContinue(selectedTopics)}
             disabled={selectedTopics.length === 0}
             variant="primary"
             fullWidth

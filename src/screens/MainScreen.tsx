@@ -14,17 +14,26 @@ interface MainScreenProps {
 
 const MainScreen: React.FC<MainScreenProps> = ({ userInfo }) => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   const renderScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen userInfo={userInfo} />;
+        return <HomeScreen userInfo={userInfo} topics={selectedTopics} />;
       case 'podcast':
         return <NewsPodcastScreen />;
       case 'settings':
-        return <TopicsScreen onContinue={() => setActiveTab('home')} isSettingsMode />;
+        return (
+          <TopicsScreen
+            onContinue={(topics) => {
+              setSelectedTopics(topics);
+              setActiveTab('home');
+            }}
+            isSettingsMode
+          />
+        );
       default:
-        return <HomeScreen userInfo={userInfo} />;
+        return <HomeScreen userInfo={userInfo} topics={selectedTopics} />;
     }
   };
 
