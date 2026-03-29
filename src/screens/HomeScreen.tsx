@@ -8,7 +8,6 @@ import {
   PanResponder,
   Dimensions,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,11 +46,47 @@ const TOPIC_RSS_MAP: Record<string, string> = {
 const buildRSSUrls = (topics: string[]) => {
   return topics.map((topicName) => {
     const query = TOPIC_RSS_MAP[topicName] || topicName;
-
     return `https://news.google.com/rss/search?q=${encodeURIComponent(
       query + " when:1d"
     )}&hl=en-IN&gl=IN&ceid=IN:en`;
   });
+};
+
+// 🔥 ANIMATED SKELETON COMPONENT
+const SkeletonLoader = () => {
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [fadeAnim]);
+
+  return (
+    <View style={styles.card}>
+      <Animated.View style={[styles.skeletonBackground, { opacity: fadeAnim }]} />
+      <View style={styles.content}>
+        <Animated.View style={[styles.skeletonLine, { width: 80, height: 16, backgroundColor: '#58CC02', marginBottom: 12, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '90%', height: 28, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '70%', height: 28, marginBottom: 16, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '100%', height: 14, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '100%', height: 14, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '80%', height: 14, marginBottom: 16, opacity: fadeAnim }]} />
+        <Animated.View style={[styles.skeletonLine, { width: 100, height: 12, opacity: fadeAnim }]} />
+      </View>
+    </View>
+  );
 };
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
@@ -79,11 +114,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
 
         const formatted = items.map((item: any, index: number) => {
           const [title, source] = (item.title || "").split(" - ");
+          
+          // Clean up the description to remove the duplicated title text injected by Google News
+          let cleanDescription = item.description || "";
+          if (title) {
+            cleanDescription = cleanDescription.replace(new RegExp(title, 'g'), '');
+          }
 
           return {
             id: `${Math.random()}`,
             title: title || "No title",
-            description: item.description || "",
+            description: cleanDescription,
             image: `https://picsum.photos/600/900?random=${index}`,
             source: source || "News",
             category: "General",
@@ -143,18 +184,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
 
   const renderCards = () => {
     if (loading) {
-      return (
-        <View style={styles.skeleton}>
-          <ActivityIndicator size="large" color="#58CC02" />
-          <Text style={{ color: '#fff', marginTop: 10 }}>Loading news...</Text>
-        </View>
-      );
+      return <SkeletonLoader />;
     }
 
     if (currentIndex >= cards.length) {
       return (
-        <View style={styles.skeleton}>
-          <Text style={{ color: '#fff' }}>🎉 No more news</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>🎉 You're all caught up!</Text>
         </View>
       );
     }
@@ -177,9 +213,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
           >
             <Image source={{ uri: card.image }} style={styles.image} />
 
+            {/* 🔥 FIXED OVERLAY & GRADIENT */}
+            <View style={styles.overlay} />
             <LinearGradient
               colors={[
-                'transparent',
+                'rgba(0,0,0,0)',
                 'rgba(0,0,0,0.05)',
                 'rgba(0,0,0,0.15)',
                 'rgba(0,0,0,0.35)',
@@ -187,7 +225,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
                 'rgba(0,0,0,0.8)',
                 'rgba(0,0,0,0.95)',
               ]}
-              locations={[0, 0.1, 0.25, 0.45, 0.65, 0.85, 1]}
+              locations={[0, 0.35, 0.55, 0.65, 0.75, 0.85, 1]}
               style={styles.gradientOverlay}
             />
 
@@ -216,7 +254,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 🔥 HEADER (ALWAYS ON TOP) */}
+      {/* 🔥 HEADER */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
@@ -253,7 +291,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ topics }) => {
         </View>
       </View>
 
-      {/* 🔥 FEED BEHIND */}
+      {/* 🔥 FEED */}
       <View style={styles.feed}>{renderCards()}</View>
     </SafeAreaView>
   );
@@ -314,13 +352,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  gradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: '65%', 
-  },
-
   progressFill: { height: '100%', backgroundColor: '#58CC02' },
 
   progressText: { fontSize: 12, fontWeight: 'bold', color: '#777' },
@@ -346,23 +377,36 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
+    backgroundColor: '#1a1a1a', // Dark base for the card
   },
 
   image: {
     width: '100%',
     height: '100%',
     position: 'absolute',
+    zIndex: 1,
   },
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 2,
+  },
+  
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: '65%',
+    zIndex: 3,
   },
 
   content: {
     position: 'absolute',
     bottom: 100,
     padding: 20,
+    zIndex: 4,
+    width: '100%',
   },
 
   category: {
@@ -381,22 +425,33 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
 
-  description: {
-    color: '#ddd',
-    fontSize: 14,
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-
   source: {
     color: '#aaa',
     marginTop: 10,
   },
 
-  skeleton: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#111',
+  },
+  
+  emptyStateText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+
+  // Skeleton Styles
+  skeletonBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#333',
+  },
+  
+  skeletonLine: {
+    backgroundColor: '#555',
+    borderRadius: 4,
+    marginBottom: 8,
   },
 });
