@@ -2,6 +2,7 @@ import "./global.css";
 import { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import BootSplash from "react-native-bootsplash";
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import TopicsScreen from './src/screens/TopicsScreen';
@@ -64,10 +65,12 @@ function App() {
   };
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" />
-      {renderScreen()}
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar barStyle="dark-content" />
+        {renderScreen()}
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

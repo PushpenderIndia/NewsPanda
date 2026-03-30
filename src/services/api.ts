@@ -152,3 +152,167 @@ export const addXP = async (email: string, xp: number = 1): Promise<XPResponse> 
     throw error;
   }
 };
+
+export interface InteractionData {
+  email: string;
+  news_link: string;
+  news_provider: string;
+  news_category?: string;
+}
+
+export interface InteractionResponse {
+  success: boolean;
+  message?: string;
+  liked?: boolean;
+  bookmarked?: boolean;
+  error?: string;
+}
+
+/**
+ * Like an article
+ */
+export const likeArticle = async (data: InteractionData): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error liking article:', error);
+    throw error;
+  }
+};
+
+/**
+ * Unlike an article
+ */
+export const unlikeArticle = async (email: string, news_link: string): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/like`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, news_link }),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error unliking article:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check if article is liked
+ */
+export const checkLiked = async (email: string, news_link: string): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/like?email=${encodeURIComponent(email)}&news_link=${encodeURIComponent(news_link)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error checking liked status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Bookmark an article
+ */
+export const bookmarkArticle = async (data: InteractionData): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/bookmark`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error bookmarking article:', error);
+    throw error;
+  }
+};
+
+/**
+ * Remove bookmark from an article
+ */
+export const removeBookmark = async (email: string, news_link: string): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/bookmark`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, news_link }),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error removing bookmark:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check if article is bookmarked
+ */
+export const checkBookmarked = async (email: string, news_link: string): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/bookmark?email=${encodeURIComponent(email)}&news_link=${encodeURIComponent(news_link)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error checking bookmarked status:', error);
+    throw error;
+  }
+};
+
+export interface ShareData extends InteractionData {
+  share_platform?: string;
+}
+
+/**
+ * Track article share
+ */
+export const trackShare = async (data: ShareData): Promise<InteractionResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/newspanda/share`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error tracking share:', error);
+    throw error;
+  }
+};

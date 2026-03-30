@@ -9,6 +9,7 @@ export interface NewsArticle {
   image: string;
   source: string;
   category: string;
+  link: string;
 }
 
 export interface HomeScreenProps {

@@ -55,6 +55,7 @@ export const fetchNewsArticles = async (
           image: `https://picsum.photos/600/900?random=${Date.now()}-${i}-${index}`,
           source: source || "News",
           category: topicName,
+          link: item.link || "",
         };
       });
 
