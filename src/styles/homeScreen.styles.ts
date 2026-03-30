@@ -223,7 +223,7 @@ export const newsCardStyles = StyleSheet.create({
   },
   content: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 10,
     padding: 20,
     zIndex: 4,
     width: '100%',
@@ -272,7 +272,7 @@ export const skeletonStyles = StyleSheet.create({
   },
   skeletonContent: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 80,
     padding: 20,
     zIndex: 4,
     width: '100%',
