@@ -223,10 +223,6 @@ export const newsCardStyles = StyleSheet.create({
   },
   doubleTapHeart: {
     position: 'absolute',
-    top: '40%',
-    left: '50%',
-    marginLeft: -60,
-    marginTop: -60,
     zIndex: 10,
     pointerEvents: 'none',
   },

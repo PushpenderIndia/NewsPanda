@@ -3,17 +3,19 @@
  * Displays a single news article card with image, title, description
  * Includes like, share, bookmark functionality and double-tap to like
  */
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Modal, Alert, Animated } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, Modal, Alert } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
 import RenderHTML from 'react-native-render-html';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Share from 'react-native-share';
+import LottieView from 'lottie-react-native';
 import { NewsArticle } from '../../types/news.types';
 import { newsCardStyles, SCREEN_WIDTH } from '../../styles/homeScreen.styles';
 import { getUserInfo } from '../../services/storage';
 import { likeArticle, unlikeArticle, bookmarkArticle, removeBookmark, trackShare } from '../../services/api';
+import animations from '../../assets/animations';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -23,28 +25,31 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [likeAnimation] = useState(new Animated.Value(0));
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
+  const lottieRef = useRef<LottieView>(null);
 
   // Double-tap gesture for like
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
-    .onEnd(async () => {
+    .onEnd(async (event) => {
+      // Get tap position
+      const x = event.x - 75; // Center the 150x150 animation
+      const y = event.y - 75;
+      setTapPosition({ x, y });
+
       if (!isLiked) {
         await handleLike();
-        // Animate heart
-        Animated.sequence([
-          Animated.timing(likeAnimation, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(likeAnimation, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
       }
+
+      // Show and play animation
+      setShowHeartAnimation(true);
+      lottieRef.current?.play();
+
+      // Hide animation after it completes
+      setTimeout(() => {
+        setShowHeartAnimation(false);
+      }, 1000);
     });
 
   const handleLike = async () => {
@@ -147,11 +152,6 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
     }
   };
 
-  const heartScale = likeAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   return (
     <GestureDetector gesture={doubleTap}>
       <View style={newsCardStyles.card}>
@@ -173,18 +173,25 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           style={newsCardStyles.gradientOverlay}
         />
 
-        {/* Double-tap heart animation */}
-        <Animated.View
-          style={[
-            newsCardStyles.doubleTapHeart,
-            {
-              transform: [{ scale: heartScale }],
-              opacity: likeAnimation,
-            },
-          ]}
-        >
-          <Icon name="heart" size={120} color="#FF0050" />
-        </Animated.View>
+        {/* Double-tap heart animation at tap position */}
+        {showHeartAnimation && (
+          <View
+            style={[
+              newsCardStyles.doubleTapHeart,
+              {
+                left: tapPosition.x,
+                top: tapPosition.y,
+              },
+            ]}
+          >
+            <LottieView
+              ref={lottieRef}
+              source={animations.heart}
+              style={{ width: 150, height: 150 }}
+              loop={false}
+            />
+          </View>
+        )}
 
         {/* Action buttons */}
         <View style={newsCardStyles.actionButtons}>
