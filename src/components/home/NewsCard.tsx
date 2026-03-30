@@ -206,6 +206,9 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
             source={animations.heart}
             autoPlay={false}
             loop={false}
+            cacheComposition={true}
+            hardwareAccelerationAndroid={true}
+            renderMode="HARDWARE"
             style={{ width: 150, height: 150 }}
           />
         </View>
