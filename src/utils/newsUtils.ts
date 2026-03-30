@@ -23,11 +23,9 @@ export const fetchNewsArticles = async (
 ): Promise<NewsArticle[]> => {
   const selectedTopics = topics.length ? topics : ["Tech"];
   const parser = new XMLParser();
-  let allArticles: NewsArticle[] = [];
 
-  // Fetch news for each topic and tag them appropriately
-  for (let i = 0; i < selectedTopics.length; i++) {
-    const topicName = selectedTopics[i];
+  // Fetch all topics in parallel using Promise.all
+  const fetchPromises = selectedTopics.map(async (topicName, topicIndex) => {
     const url = buildRSSUrl(topicName);
 
     try {
@@ -36,7 +34,7 @@ export const fetchNewsArticles = async (
       const data = parser.parse(xml);
       const items = data?.rss?.channel?.item || [];
 
-      const formatted = items.map((item: any, index: number) => {
+      return items.map((item: any, index: number) => {
         const [title, source] = (item.title || "").split(" - ");
 
         // Clean up the description to remove duplicated title text
@@ -52,18 +50,23 @@ export const fetchNewsArticles = async (
           id: `${Math.random()}-${topicName}-${index}`,
           title: title || "No title",
           description: cleanDescription,
-          image: `https://picsum.photos/600/900?random=${Date.now()}-${i}-${index}`,
+          image: `https://picsum.photos/600/900?random=${Date.now()}-${topicIndex}-${index}`,
           source: source || "News",
           category: topicName,
           link: item.link || "",
         };
       });
-
-      allArticles = [...allArticles, ...formatted];
     } catch (topicError) {
       console.log(`Error fetching news for ${topicName}:`, topicError);
+      return []; // Return empty array on error
     }
-  }
+  });
+
+  // Wait for all fetches to complete
+  const results = await Promise.all(fetchPromises);
+
+  // Flatten the array of arrays
+  const allArticles = results.flat();
 
   // Randomize all articles after tagging them
   allArticles.sort(() => 0.5 - Math.random());
