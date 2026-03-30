@@ -204,7 +204,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
             <Icon
               name={isBookmarked ? "bookmark" : "bookmark-outline"}
               size={32}
-              color={isBookmarked ? "#FFD700" : "#FFF"}
+              color="#FFF"
             />
           </TouchableOpacity>
 
