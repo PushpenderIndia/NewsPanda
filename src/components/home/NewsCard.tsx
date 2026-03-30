@@ -3,9 +3,9 @@
  * Displays a single news article card with image, title, description
  * Includes like, share, bookmark functionality and double-tap to like
  */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, Modal, Alert } from 'react-native';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { TapGestureHandler, State } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
 import RenderHTML from 'react-native-render-html';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -28,29 +28,41 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
   const lottieRef = useRef<LottieView>(null);
+  const doubleTapRef = useRef<TapGestureHandler>(null);
 
-  // Double-tap gesture for like
-  const doubleTap = Gesture.Tap()
-    .numberOfTaps(2)
-    .onEnd(async (event) => {
-      // Get tap position
-      const x = event.x - 75; // Center the 150x150 animation
-      const y = event.y - 75;
-      setTapPosition({ x, y });
+  // Handle double-tap event
+  const onDoubleTap = (event: any) => {
+    if (event.nativeEvent.state === State.ACTIVE) {
+      const { x, y } = event.nativeEvent;
+      console.log('Double tap detected at:', x, y);
 
+      // Set animation position
+      const posX = x - 75;
+      const posY = y - 75;
+      setTapPosition({ x: posX, y: posY });
+
+      // Show animation
+      setShowHeartAnimation(true);
+
+      // Trigger like if not already liked
       if (!isLiked) {
-        await handleLike();
+        handleLike();
       }
 
-      // Show and play animation
-      setShowHeartAnimation(true);
-      lottieRef.current?.play();
-
-      // Hide animation after it completes
+      // Hide animation after 1 second
       setTimeout(() => {
         setShowHeartAnimation(false);
       }, 1000);
-    });
+    }
+  };
+
+  // Auto-play Lottie animation when it becomes visible
+  useEffect(() => {
+    if (showHeartAnimation) {
+      lottieRef.current?.reset();
+      lottieRef.current?.play();
+    }
+  }, [showHeartAnimation]);
 
   const handleLike = async () => {
     try {
@@ -153,7 +165,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   };
 
   return (
-    <GestureDetector gesture={doubleTap}>
+    <TapGestureHandler
+      ref={doubleTapRef}
+      onHandlerStateChange={onDoubleTap}
+      numberOfTaps={2}
+    >
       <View style={newsCardStyles.card}>
         <Image source={{ uri: article.image }} style={newsCardStyles.image} />
 
@@ -174,24 +190,25 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
         />
 
         {/* Double-tap heart animation at tap position */}
-        {showHeartAnimation && (
-          <View
-            style={[
-              newsCardStyles.doubleTapHeart,
-              {
-                left: tapPosition.x,
-                top: tapPosition.y,
-              },
-            ]}
-          >
-            <LottieView
-              ref={lottieRef}
-              source={animations.heart}
-              style={{ width: 150, height: 150 }}
-              loop={false}
-            />
-          </View>
-        )}
+        <View
+          style={[
+            newsCardStyles.doubleTapHeart,
+            {
+              left: tapPosition.x,
+              top: tapPosition.y,
+              opacity: showHeartAnimation ? 1 : 0,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <LottieView
+            ref={lottieRef}
+            source={animations.heart}
+            autoPlay={false}
+            loop={false}
+            style={{ width: 150, height: 150 }}
+          />
+        </View>
 
         {/* Action buttons */}
         <View style={newsCardStyles.actionButtons}>
@@ -299,7 +316,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
           </TouchableOpacity>
         </Modal>
       </View>
-    </GestureDetector>
+    </TapGestureHandler>
   );
 };
 
