@@ -4,7 +4,7 @@ NewsPanda is a gamified news reading mobile application built with React Native 
 
 ## Demo
 
-![Demo Video](Demo.mp4)
+[![Watch Demo](https://img.youtube.com/vi/qLxlMN7VoZ4/0.jpg)](https://youtu.be/qLxlMN7VoZ4)
 
 ## Features
 
