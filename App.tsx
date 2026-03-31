@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Orientation from 'react-native-orientation-locker';
 import BootSplash from "react-native-bootsplash";
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import TopicsScreen from './src/screens/TopicsScreen';
@@ -18,6 +19,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Lock orientation to portrait
+    Orientation.lockToPortrait();
+
     const init = async () => {
       configureGoogleSignIn();
 
@@ -35,6 +39,11 @@ function App() {
     };
 
     init();
+
+    // Cleanup: unlock orientation when component unmounts
+    return () => {
+      Orientation.unlockAllOrientations();
+    };
   }, []);
 
   const handleSignInComplete = async (user: any) => {
