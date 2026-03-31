@@ -1,6 +1,10 @@
 # NewsPanda - AI-Powered News Recommender
 
-NewsPanda is a gamified news reading mobile application built with React Native that delivers personalized news content with an engaging, 
+NewsPanda is a gamified news reading mobile application built with React Native that delivers personalized news content with an engaging,
+
+## Demo
+
+![Demo Video](Demo.mp4)
 
 ## Features
 
